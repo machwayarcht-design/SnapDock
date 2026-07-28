@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SnapDock</title>
+    <style>
+      :root {
+        --glass: rgba(255, 255, 255, 0.14);
+        --glass-border: rgba(255, 255, 255, 0.28);
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        --text: #1d1d1f;
+        --muted: rgba(60, 60, 67, 0.6);
+        --accent: #6b63a8;
+        --key: #1d1d1f;
+        --tile-bg: rgba(0, 0, 0, 0.05); /* 实色，配合面板取消透明 */
+        --tile-border: rgba(0, 0, 0, 0.08);
+        --sheet-bg: rgba(252, 252, 253, 0.86);
+        --sheet-border: rgba(0, 0, 0, 0.08);
+        --row-key-bg: rgba(0, 0, 0, 0.05);
+        --divider: rgba(0, 0, 0, 0.07);
+        --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body {
+        font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+        background: transparent;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        -webkit-app-region: drag;
+        user-select: none;
+      }
+      .hidden { display: none !important; }
+
+      /* ─────────── Ctrl+~ frosted layout panel (unchanged language) ─────────── */
+      .panel {
+        width: 420px;
+        padding: 22px;
+        border-radius: 24px;
+        background: #f4f4f7; /* 实色，取消透明 */
+        border: none; /* 与 toast 统一：去掉卡片白边 */
+        box-shadow: var(--shadow);
+        /* 取消毛玻璃 backdrop-filter */
+        opacity: 0;
+        transform: scale(0.96);
+        filter: blur(20px);
+        transition: opacity 0.18s var(--ease), transform 0.18s var(--ease),
+          filter 0.18s var(--ease);
+      }
+      .panel.open { opacity: 1; transform: scale(1); filter: blur(0); }
+      .panel.closing { transition-duration: 0.15s; opacity: 0; transform: scale(0.98); filter: blur(12px); }
+      .brand {
+        text-align: center; font-size: 11px; letter-spacing: 0.34em;
+        text-transform: uppercase; font-weight: 600; color: var(--muted); margin-bottom: 18px;
+      }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .layout {
+        position: relative; aspect-ratio: 1 / 0.74; border-radius: 14px;
+        background: var(--tile-bg); border: 1px solid var(--tile-border);
+        display: grid; place-items: center; cursor: pointer;
+        -webkit-app-region: no-drag; padding: 14px;
+        opacity: 0; transform: scale(0.9);
+        transition: opacity 0.18s var(--ease), transform 0.18s var(--ease),
+          background 0.12s ease, border-color 0.12s ease;
+      }
+      .panel.open .layout { opacity: 1; transform: scale(1); }
+      .panel.open .layout:nth-child(1) { transition-delay: 0ms; }
+      .panel.open .layout:nth-child(2) { transition-delay: 30ms; }
+      .panel.open .layout:nth-child(3) { transition-delay: 60ms; }
+      .panel.open .layout:nth-child(4) { transition-delay: 90ms; }
+      .layout:hover { background: rgba(107, 99, 168, 0.18); border-color: rgba(107, 99, 168, 0.5); }
+      .layout.tap { transform: scale(1.05); transition-duration: 0.12s; }
+      .layout svg { width: 100%; height: 100%; display: block; overflow: visible; }
+      .layout .key {
+        position: absolute; top: 7px; right: 9px; font-size: 12px; font-weight: 800;
+        color: var(--key); font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+      }
+      .layout:hover .key { color: var(--accent); }
+
+      /* ─────────── Top slide-in toast (restore / save results) ─────────── */
+      .toast-wrap {
+        position: fixed; top: 0; left: 0; right: 0;
+        display: flex; justify-content: center; padding-top: 16px;
+        pointer-events: none;
+      }
+      .toast-card {
+        min-width: 240px; max-width: 340px;
+        padding: 14px 20px; border-radius: 16px;
+        background: #f4f4f7; border: none; /* 实色、去白边 */
+        box-shadow: var(--shadow);
+        display: flex; align-items: center; gap: 12px;
+        transform: translateY(-180%); opacity: 0;
+        transition: transform 0.36s var(--ease), opacity 0.30s ease;
+      }
+      .toast-card.in { transform: translateY(0); opacity: 1; }
+      .toast-icon { font-size: 20px; line-height: 1; flex: none; }
+      .toast-text { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+
+      /* ─────────── Centered confirm modal (replace-layout) ─────────── */
+      .modal {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(18px) saturate(150%);
+        -webkit-backdrop-filter: blur(18px) saturate(150%);
+        opacity: 0; pointer-events: none; transition: opacity 0.18s var(--ease);
+      }
+      .modal.show { opacity: 1; pointer-events: auto; }
+      .modal-card {
+        min-width: 260px; max-width: 320px; padding: 22px; border-radius: 18px;
+        background: var(--glass); border: 1px solid var(--glass-border); box-shadow: var(--shadow);
+        backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%);
+        text-align: center; transform: scale(0.96); transition: transform 0.18s var(--ease);
+        -webkit-app-region: no-drag;
+      }
+      .modal.show .modal-card { transform: scale(1); }
+      .modal-icon { font-size: 26px; margin-bottom: 8px; }
+      .modal-text { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.45; }
+      .modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; }
+      .modal-actions button {
+        -webkit-app-region: no-drag; border: none; cursor: pointer; padding: 8px 18px;
+        border-radius: 11px; font-size: 13px; font-weight: 600; font-family: inherit;
+      }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-ghost { background: rgba(255, 255, 255, 0.2); color: var(--text); }
+
+      /* ─────────── Apple-clean sheets (shortcuts / about) ─────────── */
+      .sheet {
+        width: 100%; max-width: 460px; max-height: 100%;
+        border-radius: 22px; overflow: hidden;
+        background: var(--sheet-bg); border: 1px solid var(--sheet-border);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+        display: flex; flex-direction: column;
+        opacity: 0; transform: scale(0.97) translateY(6px);
+        transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+      }
+      .sheet.show { opacity: 1; transform: scale(1) translateY(0); }
+      .sheet-head {
+        padding: 18px 22px 14px; text-align: center; position: relative;
+        border-bottom: 1px solid var(--divider);
+      }
+      .sheet-title { font-size: 16px; font-weight: 700; letter-spacing: 0.01em; color: var(--text); }
+      .sheet-close {
+        position: absolute; top: 14px; right: 14px; width: 26px; height: 26px;
+        border: none; border-radius: 50%; cursor: pointer; -webkit-app-region: no-drag;
+        background: rgba(0, 0, 0, 0.06); color: var(--muted); font-size: 15px; line-height: 26px;
+      }
+      .sheet-close:hover { background: rgba(0, 0, 0, 0.12); color: var(--text); }
+      .sheet-body { padding: 8px 20px 18px; overflow-y: auto; -webkit-app-region: no-drag; }
+
+      /* shortcuts groups */
+      .sc-group { margin-top: 14px; }
+      .sc-group-title {
+        font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--muted); margin: 0 6px 6px;
+      }
+      .sc-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 9px 6px; border-bottom: 1px solid var(--divider);
+      }
+      .sc-row:last-child { border-bottom: none; }
+      .sc-desc { font-size: 13.5px; color: var(--text); }
+      .sc-key {
+        font-size: 12.5px; font-weight: 600; color: #333; font-family: "SFMono-Regular", "Consolas", monospace;
+        background: var(--row-key-bg); padding: 3px 9px; border-radius: 7px; white-space: nowrap;
+      }
+
+      /* about */
+      .about-body { padding: 24px 22px 20px; text-align: center; -webkit-app-region: no-drag; }
+      .about-logo {
+        width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 14px;
+        background: transparent;
+        display: grid; place-items: center;
+      }
+      .about-logo img { width: 56px; height: 56px; border-radius: 14px; display: block; }
+      .about-name { font-size: 19px; font-weight: 700; color: var(--text); }
+      .about-version { font-size: 13px; color: var(--muted); margin-top: 3px; }
+      .about-meta { font-size: 13px; color: var(--text); margin-top: 16px; line-height: 1.7; }
+      .about-copy { font-size: 12px; color: var(--muted); margin-top: 10px; }
+      .about-links { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+      .about-link {
+        -webkit-app-region: no-drag; border: 1px solid var(--sheet-border); cursor: pointer;
+        background: rgba(255, 255, 255, 0.5); color: var(--text);
+        font-size: 13px; font-weight: 600; font-family: inherit;
+        padding: 9px 14px; border-radius: 10px; transition: background 0.12s ease;
+      }
+      .about-link:hover:not(:disabled) { background: rgba(107, 99, 168, 0.12); }
+      .about-link:disabled { color: var(--muted); cursor: default; opacity: 0.7; }
+      .about-link small { font-weight: 400; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <linearGradient id="pane" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" />
+          <stop offset="1" stop-color="#e4e4ea" />
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <!-- Ctrl+~ layout panel -->
+    <div class="panel hidden" id="panel">
+      <div class="brand">SnapDock</div>
+      <div class="grid">
+        <button class="layout" data-mode="1" title="Single">
+          <span class="key">1</span>
+          <svg viewBox="0 0 96 64" fill="none">
+            <rect x="12" y="10" width="72" height="44" rx="7" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+          </svg>
+        </button>
+        <button class="layout" data-mode="2" title="Horizontal Split">
+          <span class="key">2</span>
+          <svg viewBox="0 0 96 64" fill="none">
+            <line x1="48" y1="10" x2="48" y2="54" stroke="#c7c7cc" stroke-width="2" />
+            <rect x="14" y="10" width="28" height="44" rx="6" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="54" y="10" width="28" height="44" rx="6" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+          </svg>
+        </button>
+        <button class="layout" data-mode="3" title="Vertical Split">
+          <span class="key">3</span>
+          <svg viewBox="0 0 96 64" fill="none">
+            <rect x="10" y="22.5" width="34" height="19" rx="4" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="50" y="11" width="34" height="19" rx="4" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="50" y="34" width="34" height="19" rx="4" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+          </svg>
+        </button>
+        <button class="layout" data-mode="4" title="2 × 2 Grid">
+          <span class="key">4</span>
+          <svg viewBox="0 0 96 64" fill="none">
+            <line x1="48" y1="10" x2="48" y2="54" stroke="#c7c7cc" stroke-width="2" />
+            <line x1="12" y1="32" x2="84" y2="32" stroke="#c7c7cc" stroke-width="2" />
+            <rect x="14" y="11" width="28" height="18" rx="5" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="54" y="11" width="28" height="18" rx="5" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="14" y="35" width="28" height="18" rx="5" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+            <rect x="54" y="35" width="28" height="18" rx="5" fill="url(#pane)" stroke="#9a9aa2" stroke-width="1.6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Top slide-in toast -->
+    <div class="toast-wrap hidden" id="toastWrap">
+      <div class="toast-card" id="toastCard">
+        <span class="toast-icon" id="toastIcon"></span>
+        <span class="toast-text" id="toastText"></span>
+      </div>
+    </div>
+
+    <!-- Replace-layout confirm modal -->
+    <div class="modal hidden" id="modal">
+      <div class="modal-card">
+        <div class="modal-icon" id="modalIcon">↺</div>
+        <div class="modal-text" id="modalText"></div>
+        <div class="modal-actions" id="modalActions"></div>
+      </div>
+    </div>
+
+    <!-- Keyboard shortcuts sheet -->
+    <div class="sheet hidden" id="sheetShortcuts">
+      <div class="sheet-head">
+        <div class="sheet-title" id="scTitle">Keyboard Shortcuts</div>
+        <button class="sheet-close" data-close="sheetShortcuts">✕</button>
+      </div>
+      <div class="sheet-body" id="scBody"></div>
+    </div>
+
+    <!-- About sheet -->
+    <div class="sheet hidden" id="sheetAbout">
+      <div class="sheet-head">
+        <div class="sheet-title" id="aboutTitle">About</div>
+        <button class="sheet-close" data-close="sheetAbout">✕</button>
+      </div>
+      <div class="about-body" id="aboutBody"></div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

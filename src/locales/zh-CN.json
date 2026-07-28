@@ -1,0 +1,70 @@
+{
+  "tray": {
+    "title": "SnapDock",
+    "layouts": "布局",
+    "single": "单窗口",
+    "horizontal": "左右双分",
+    "vertical": "三窗布局",
+    "grid": "四宫格",
+    "shortcuts": "键盘快捷键",
+    "language": "语言",
+    "startup": "开机自启",
+    "about": "关于",
+    "quit": "退出"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "groups": [
+      {
+        "title": "面板",
+        "items": [
+          { "key": "Ctrl + ~", "desc": "打开 / 关闭 SnapDock" },
+          { "key": "1", "desc": "单窗口" },
+          { "key": "2", "desc": "左右双分" },
+          { "key": "3", "desc": "三窗布局" },
+          { "key": "4", "desc": "四宫格" },
+          { "key": "Esc", "desc": "关闭面板" }
+        ]
+      },
+      {
+        "title": "排列",
+        "items": [
+          { "key": "Ctrl + Tab", "desc": "窗口轮换" },
+          { "key": "Ctrl + ←", "desc": "向左互换" },
+          { "key": "Ctrl + →", "desc": "向右互换" },
+          { "key": "Ctrl + ↑", "desc": "向上互换" },
+          { "key": "Ctrl + ↓", "desc": "向下互换" }
+        ]
+      },
+      {
+        "title": "工作区",
+        "items": [
+          { "key": "Ctrl + Shift + 1–4", "desc": "保存工作区" },
+          { "key": "Ctrl + 1–4", "desc": "恢复工作区" }
+        ]
+      }
+    ]
+  },
+  "about": {
+    "name": "SnapDock",
+    "version": "版本 1.7.1",
+    "designer": "designed by Mach Way",
+    "builtWith": "基于 Tauri 构建",
+    "copyright": "© 2026",
+    "github": "GitHub",
+    "website": "官方网站",
+    "updates": "检查更新",
+    "reserved": "预留",
+    "close": "关闭"
+  },
+  "notify": {
+    "save-saved": "布局方案 {n} 已保存",
+    "save-nolayout": "请先按 1 / 2 / 3 / 4 排列窗口",
+    "save-confirm": "布局方案 {n} 已存在，是否替换？",
+    "load-restored": "已恢复工作区 {n}",
+    "load-empty": "布局方案 {n} 为空",
+    "load-nomatch": "未找到匹配窗口",
+    "replace": "替换",
+    "cancel": "取消"
+  }
+}

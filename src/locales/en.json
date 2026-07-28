@@ -1,0 +1,70 @@
+{
+  "tray": {
+    "title": "SnapDock",
+    "layouts": "Layouts",
+    "single": "Single Window",
+    "horizontal": "Horizontal Split",
+    "vertical": "Vertical Split",
+    "grid": "2 × 2 Grid",
+    "shortcuts": "Keyboard Shortcuts",
+    "language": "Language",
+    "startup": "Launch at Startup",
+    "about": "About",
+    "quit": "Quit"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "groups": [
+      {
+        "title": "Panel",
+        "items": [
+          { "key": "Ctrl + ~", "desc": "Open / close SnapDock" },
+          { "key": "1", "desc": "Single Window" },
+          { "key": "2", "desc": "Horizontal Split" },
+          { "key": "3", "desc": "Vertical Split" },
+          { "key": "4", "desc": "2 × 2 Grid" },
+          { "key": "Esc", "desc": "Close panel" }
+        ]
+      },
+      {
+        "title": "Arrange",
+        "items": [
+          { "key": "Ctrl + Tab", "desc": "Rotate windows" },
+          { "key": "Ctrl + ←", "desc": "Swap left" },
+          { "key": "Ctrl + →", "desc": "Swap right" },
+          { "key": "Ctrl + ↑", "desc": "Swap up" },
+          { "key": "Ctrl + ↓", "desc": "Swap down" }
+        ]
+      },
+      {
+        "title": "Workspaces",
+        "items": [
+          { "key": "Ctrl + Shift + 1–4", "desc": "Save workspace" },
+          { "key": "Ctrl + 1–4", "desc": "Restore workspace" }
+        ]
+      }
+    ]
+  },
+  "about": {
+    "name": "SnapDock",
+    "version": "Version 1.7.1",
+    "designer": "designed by Mach Way",
+    "builtWith": "Built with Tauri",
+    "copyright": "© 2026",
+    "github": "GitHub",
+    "website": "Official Website",
+    "updates": "Check for Updates",
+    "reserved": "reserved",
+    "close": "Close"
+  },
+  "notify": {
+    "save-saved": "Layout {n} saved",
+    "save-nolayout": "Arrange windows first (1 / 2 / 3 / 4)",
+    "save-confirm": "Layout {n} already exists. Replace it?",
+    "load-restored": "Workspace {n} restored",
+    "load-empty": "Layout {n} is empty",
+    "load-nomatch": "No matching windows found",
+    "replace": "Replace",
+    "cancel": "Cancel"
+  }
+}

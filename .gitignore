@@ -1,0 +1,20 @@
+# Rust build artifacts
+target/
+.cargo-*
+
+# Node (not used, kept for safety)
+node_modules/
+dist/
+
+# Binaries & released artifacts (uploaded to GitHub Releases manually)
+*.exe
+*.dll
+*.zip
+release/
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
